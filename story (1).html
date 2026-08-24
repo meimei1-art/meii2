@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>物語｜月が星を照らすまで</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@300;400;500&family=Cormorant+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stage: #1C1712;
+    --tab-color-1: #352B23;
+    --tab-color-2: #43382D;
+    --tab-color-3: #524538;
+    --tab-color-4: #625344;
+    --gold: #C9A876;
+    --cream: #EFE9DC;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--stage);
+    color: var(--cream);
+    font-family: 'Noto Sans TC', sans-serif;
+    overflow: hidden;
+  }
+  body { animation: pageFadeIn 0.7s ease; }
+  @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .back-btn {
+    position: fixed;
+    top: 18px; left: 18px;
+    z-index: 50;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    text-decoration: none;
+    color: var(--cream);
+  }
+
+  /* ---------------- 容器 (電腦版居中與限制寬度) ---------------- */
+  .story-tabs {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 420px; /* 電腦版大小精緻居中 */
+    bottom: 0; 
+    top: 22vh;
+    z-index: 10;
+  }
+
+  .story-leaf {
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    /* 讓每個格子寬度都是固定比例，露出部分完全平均 */
+    width: 48%; 
+    border-radius: 26px 26px 0 0;
+    box-shadow: 6px -4px 18px rgba(0,0,0,0.35);
+    cursor: pointer;
+    transition: transform 0.5s cubic-bezier(.65,0,.35,1), width 0.5s cubic-bezier(.65,0,.35,1);
+  }
+
+  /* 精確計算 4 個格子的平均推移距離 (等寬露頭) */
+  .story-leaf:nth-child(1) { transform: translateX(0%); background: var(--tab-color-1); z-index: 4; }
+  .story-leaf:nth-child(2) { transform: translateX(36%); background: var(--tab-color-2); z-index: 3; }
+  .story-leaf:nth-child(3) { transform: translateX(72%); background: var(--tab-color-3); z-index: 2; }
+  .story-leaf:nth-child(4) { transform: translateX(108%); background: var(--tab-color-4); z-index: 1; }
+
+  /* ---------------- 貼在右側的梯形標籤 (如圖二) ---------------- */
+  .leaf-tab {
+    position: absolute;
+    right: -32px; /* 黏在右側邊緣外 */
+    width: 36px;
+    height: 90px;
+    background: inherit;
+    display: flex; align-items: center; justify-content: center;
+    /* 梯形切角：左高右低 */
+    clip-path: polygon(0 0, 100% 18%, 100% 82%, 0 100%);
+    transition: opacity 0.3s ease;
+  }
+
+  /* 標籤高度階梯式分佈 (參考圖二的高低位置) */
+  .story-leaf:nth-child(1) .leaf-tab { top: 12%; }
+  .story-leaf:nth-child(2) .leaf-tab { top: 25%; }
+  .story-leaf:nth-child(3) .leaf-tab { top: 38%; }
+  .story-leaf:nth-child(4) .leaf-tab { top: 20%; }
+
+  .leaf-tab-text {
+    writing-mode: vertical-rl;
+    letter-spacing: 0.2em;
+    font-family: 'Noto Serif TC', serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--cream);
+    white-space: nowrap;
+  }
+
+  /* ---------------- 展開狀態 ---------------- */
+  .story-tabs.has-open .story-leaf {
+    transform: translateX(0) !important;
+  }
+
+  .story-leaf.open {
+    width: 100% !important; /* 點開後拉滿卡片寬度 */
+    z-index: 20 !important;
+  }
+
+  /* 展開後隱藏標籤，讓內頁保持乾淨 */
+  .story-leaf.open .leaf-tab {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ---------------- 內頁內容 ---------------- */
+  .leaf-content {
+    position: absolute;
+    inset: 0;
+    padding: 36px 28px 30px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease 0.2s;
+  }
+
+  .story-leaf.open .leaf-content {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .leaf-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .leaf-title-line {
+    width: 100px; height: 1px;
+    background: var(--gold);
+    opacity: 0.5;
+    margin-bottom: 28px;
+  }
+
+  /* 本編排版 */
+  .chapter-row { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 40px; }
+  .chapter-row:last-child { margin-bottom: 0; }
+  .v-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .v-col .mark { font-size: 10px; color: rgba(239,233,220,0.55); }
+  .v-text { writing-mode: vertical-rl; font-family: 'Noto Serif TC', serif; letter-spacing: 0.15em; line-height: 1.8; white-space: nowrap; }
+  .v-text.heading { font-size: 18px; font-weight: 600; color: var(--gold); }
+  .v-text.heading .cross { display: block; writing-mode: horizontal-tb; font-size: 10px; opacity: 0.6; margin-bottom: 6px; }
+  .v-text.mid { font-size: 13.5px; opacity: 0.9; }
+  .v-text.small { font-size: 12.5px; opacity: 0.75; letter-spacing: 0.1em; }
+
+  /* IF 排版 */
+  .if-groups { display: flex; flex-direction: column; gap: 36px; }
+  .if-group { border-left: 1px solid rgba(239,233,220,0.4); padding-left: 14px; }
+  .if-group div { font-family: 'Cormorant Garamond', serif; font-size: 18px; line-height: 1.6; letter-spacing: 0.03em; }
+  .if-g1 { margin-left: 16px; }
+  .if-g2 { margin-left: 0; }
+  .if-g3 { margin-left: 20px; }
+
+  .placeholder-text { font-size: 12.5px; line-height: 1.8; opacity: 0.8; max-width: 280px; }
+</style>
+</head>
+<body>
+
+  <a class="back-btn" href="home.html">↪︎</a>
+
+  <div class="story-tabs" id="storyTabs">
+
+    <div class="story-leaf" data-key="main">
+      <div class="leaf-tab"><span class="leaf-tab-text">本編</span></div>
+      <div class="leaf-content">
+        <div class="leaf-title">刹那永劫</div>
+        <div class="leaf-title-line"></div>
+
+        <div class="chapter-row">
+          <div class="v-col"><span class="v-text heading"><span class="cross">✛</span>序章</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text mid">春の章</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text mid">夏の章</span></div>
+          <div class="v-col" style="margin-left: 12px;"><span class="v-text heading"><span class="cross">✛</span>過去編</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text small">偶然の帰り道</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text small">笑い聲の行方</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text small">岐路に立つ</span></div>
+        </div>
+
+        <div class="chapter-row">
+          <div class="v-col"><span class="v-text heading"><span class="cross">✛</span>終章</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text mid">秋の章</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text mid">冬の章</span></div>
+          <div class="v-col" style="margin-left: 12px;"><span class="v-text heading"><span class="cross">✛</span>番外編</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text small">霧晴れぬ朝</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text small">宛先のない手紙</span></div>
+          <div class="v-col"><span class="mark">▪</span><span class="v-text small">些細な約束</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="story-leaf" data-key="if">
+      <div class="leaf-tab"><span class="leaf-tab-text">I F</span></div>
+      <div class="leaf-content">
+        <div class="leaf-title">もしも、、、</div>
+        <div class="leaf-title-line"></div>
+        <div class="if-groups">
+          <div class="if-group if-g1">
+            <div>Chapter. 01</div>
+            <div>Chapter. 02</div>
+            <div>Chapter. 03</div>
+            <div>Chapter. 04</div>
+          </div>
+          <div class="if-group if-g2">
+            <div>Chapter. 05</div>
+            <div>Chapter. 06</div>
+            <div>Chapter. 07</div>
+          </div>
+          <div class="if-group if-g3">
+            <div>Chapter. 08</div>
+            <div>Chapter. 09</div>
+            <div>Chapter. 10</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="story-leaf" data-key="modern">
+      <div class="leaf-tab"><span class="leaf-tab-text">現代編</span></div>
+      <div class="leaf-content">
+        <div class="leaf-title">現代編</div>
+        <div class="leaf-title-line"></div>
+        <div class="placeholder-text">現代日常背景的番外故事，章節之後會陸續補上。</div>
+      </div>
+    </div>
+
+    <div class="story-leaf" data-key="soon">
+      <div class="leaf-tab"><span class="leaf-tab-text">待更新</span></div>
+      <div class="leaf-content">
+        <div class="leaf-title">待更新</div>
+        <div class="leaf-title-line"></div>
+        <div class="placeholder-text">還在構思中的企劃，敬請期待之後的更新。</div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  const storyTabs = document.getElementById('storyTabs');
+  const leaves = document.querySelectorAll('.story-leaf');
+
+  leaves.forEach(leaf => {
+    leaf.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = leaf.classList.contains('open');
+      
+      leaves.forEach(l => l.classList.remove('open'));
+      
+      if (!isOpen) {
+        leaf.classList.add('open');
+        storyTabs.classList.add('has-open');
+      } else {
+        storyTabs.classList.remove('has-open');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
